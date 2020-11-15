@@ -103,8 +103,9 @@ class DistanceRow extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: ButtonTheme(
+            child: SizedBox(
               height: distanceButtomHeight,
+              width: 100,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: baseYellow,
@@ -131,8 +132,7 @@ class _DistanceFieldState extends State<DistanceField> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 100,
+    return Center(
       child: TextField(
         maxLength: 6,
         buildCounter: (BuildContext context,
@@ -143,6 +143,11 @@ class _DistanceFieldState extends State<DistanceField> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'\d{1,3}(\.\d{0,2})?'))
         ],
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          isCollapsed: true,
+        ),
         textAlign: TextAlign.center,
         controller: controller,
         maxLines: 1,
