@@ -1,39 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:tflite/tflite.dart';
 
 import 'dart:developer' as developer;
 
-List<CameraDescription> cameras;
+typedef void Callback(List<dynamic> list, int h, int w);
 
 class CameraLayer extends StatefulWidget {
+  final List<CameraDescription> cameras;
+  final Callback setRecognitions;
+  CameraLayer(this.cameras, this.setRecognitions);
+
   @override
   _CameraLayerState createState() => _CameraLayerState();
 }
 
 class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
   CameraController controller;
-  bool _isReady = false;
+  bool isDetecting = false;
 
   @override
   void initState() {
     super.initState();
-    _setupCamera();
-    // cameras = await availableCameras();
+    onNewCameraSelected(widget.cameras[0]);
     WidgetsBinding.instance.addObserver(this);
     Wakelock.enable();
-  }
-
-  Future<void> _setupCamera() async {
-    cameras = await availableCameras();
-    controller = CameraController(cameras[0], ResolutionPreset.high);
-    await controller.initialize();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _isReady = true;
-    });
   }
 
   @override
@@ -67,51 +59,83 @@ class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
     controller = CameraController(
       cameraDescription,
       ResolutionPreset.high,
+      enableAudio: false,
     );
 
-    // If the controller is updated then update the UI.
-    controller.addListener(() {
-      if (mounted) setState(() {});
-      if (controller.value.hasError) {
-        developer.log('lozsowac:' + controller.value.errorDescription);
-      }
-    });
+    // // If the controller is updated then update the UI.
+    // controller.addListener(() {
+    //   if (mounted) setState(() {});
+    //   if (controller.value.hasError) {
+    //     developer.log('lozsowac:' + controller.value.errorDescription);
+    //   }
+    // });
 
-    try {
-      await controller.initialize();
-    } on CameraException catch (e) {
-      _showCameraException(e);
-    }
-
-    if (mounted) {
+    controller.initialize().then((_) {
+      if (!mounted) return;
       setState(() {});
+      controller.startImageStream((CameraImage img) {
+        processImage(img);
+      });
+    });
+  }
+
+  processImage(CameraImage img) {
+    if (isDetecting) {
+      return;
     }
+    isDetecting = true;
+    int startTime = new DateTime.now().millisecondsSinceEpoch;
+    developer.log('image height: ${img.height}, width: ${img.width}');
+    Tflite.detectObjectOnFrame(
+      bytesList: img.planes.map((plane) {
+        return plane.bytes;
+      }).toList(),
+      model: "YOLO",
+      imageHeight: img.height,
+      imageWidth: img.width,
+      imageMean: 0,
+      imageStd: 255.0,
+      numResultsPerClass: 1,
+      threshold: 0.2,
+    ).then((recognitions) {
+      int endTime = DateTime.now().millisecondsSinceEpoch;
+      print("Detection took ${endTime - startTime}");
+      developer.log(recognitions.toString());
+
+      widget.setRecognitions(recognitions, img.height, img.width);
+
+      isDetecting = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isReady) {
+    if (controller == null || !controller.value.isInitialized) {
       return Container();
     }
     final size = MediaQuery.of(context).size;
     final deviceRatio = size.width / size.height;
-    final yScale = 1.0;
-    final xScale = controller.value.aspectRatio * deviceRatio;
-    return RotatedBox(
-      quarterTurns: -1,
-      child: AspectRatio(
-        aspectRatio: deviceRatio,
-        child: Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.diagonal3Values(xScale, yScale, 1),
-          child: CameraPreview(controller),
-        ),
+    // landscape
+    final xScale = 1.0;
+    final yScale = controller.value.aspectRatio / deviceRatio;
+    return AspectRatio(
+      aspectRatio: deviceRatio,
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.diagonal3Values(xScale, yScale, 1),
+        child: CameraPreview(controller),
       ),
     );
-  }
-
-  void _showCameraException(CameraException e) {
-    logError(e.code, e.description);
+    // final xScale = 1.0;
+    // final yScale = controller.value.aspectRatio / deviceRatio;
+    // return AspectRatio(
+    //   aspectRatio: deviceRatio,
+    //   child: Transform(
+    //     alignment: Alignment.center,
+    //     transform: Matrix4.diagonal3Values(xScale, yScale, 1),
+    //     child: CameraPreview(controller),
+    //   ),
+    // );
   }
 
   void logError(String code, String message) =>

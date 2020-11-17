@@ -175,6 +175,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.2.19-nullsafety.2"
+  tflite:
+    dependency: "direct main"
+    description:
+      path: "tflite-1.1.1-local"
+      relative: true
+    source: path
+    version: "1.1.1"
   typed_data:
     dependency: transitive
     description:

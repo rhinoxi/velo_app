@@ -7,27 +7,30 @@ const distanceButtomHeight = 36.0;
 const baseBlack = Colors.black87;
 const baseYellow = Color(0xFFFBC02D);
 
+final TextEditingController controller = TextEditingController(text: '18.44');
+
 class UILayer extends StatelessWidget {
-  final myController = TextEditingController(text: '18.44');
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).requestFocus(FocusNode());
-          developer.log('distance: ${myController.text}');
-        },
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints:
-                BoxConstraints(maxHeight: MediaQuery.of(context).size.height),
-            child: Column(
-              children: [
-                Expanded(child: HeaderRow()),
-                Expanded(flex: 3, child: DistanceRow(myController)),
-                Expanded(child: Container()),
-              ],
+    return RotatedBox(
+      quarterTurns: 1,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).requestFocus(FocusNode());
+          },
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxHeight: MediaQuery.of(context).size.width),
+              child: Column(
+                children: [
+                  Expanded(child: HeaderRow()),
+                  Expanded(flex: 3, child: DistanceRow()),
+                  Expanded(child: Container()),
+                ],
+              ),
             ),
           ),
         ),
@@ -85,9 +88,6 @@ class HeaderRow extends StatelessWidget {
 }
 
 class DistanceRow extends StatelessWidget {
-  final TextEditingController controller;
-  DistanceRow(this.controller);
-
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -98,7 +98,7 @@ class DistanceRow extends StatelessWidget {
       child: Stack(
         children: [
           CustomPaint(
-            size: Size(width, height),
+            size: Size(height, width), // rotate
             painter: Boundary(),
           ),
           Align(
@@ -110,7 +110,7 @@ class DistanceRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: baseYellow,
                 ),
-                child: DistanceField(controller),
+                child: DistanceField(),
               ),
             ),
           ),
@@ -121,14 +121,17 @@ class DistanceRow extends StatelessWidget {
 }
 
 class DistanceField extends StatefulWidget {
-  final TextEditingController controller;
-  DistanceField(this.controller);
-  _DistanceFieldState createState() => _DistanceFieldState(controller);
+  _DistanceFieldState createState() => _DistanceFieldState();
 }
 
 class _DistanceFieldState extends State<DistanceField> {
-  final TextEditingController controller;
-  _DistanceFieldState(this.controller);
+  _DistanceFieldState();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +161,6 @@ class _DistanceFieldState extends State<DistanceField> {
   @override
   void dispose() {
     developer.log('dispose distance field');
-    controller.dispose();
     super.dispose();
   }
 }
