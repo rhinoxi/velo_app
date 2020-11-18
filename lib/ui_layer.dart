@@ -7,30 +7,29 @@ const distanceButtomHeight = 36.0;
 const baseBlack = Colors.black87;
 const baseYellow = Color(0xFFFBC02D);
 
-final TextEditingController controller = TextEditingController(text: '18.44');
+final TextEditingController disTextController =
+    TextEditingController(text: '18.44');
 
 class UILayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return RotatedBox(
-      quarterTurns: 1,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: GestureDetector(
-          onTap: () {
-            FocusScope.of(context).requestFocus(FocusNode());
-          },
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(maxHeight: MediaQuery.of(context).size.width),
-              child: Column(
-                children: [
-                  Expanded(child: HeaderRow()),
-                  Expanded(flex: 3, child: DistanceRow()),
-                  Expanded(child: Container()),
-                ],
-              ),
+    developer.log('XplEqJCU UILayer rebuild');
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).requestFocus(FocusNode());
+        },
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints:
+                BoxConstraints(maxHeight: MediaQuery.of(context).size.height),
+            child: Column(
+              children: [
+                Expanded(child: HeaderRow()),
+                Expanded(flex: 3, child: DistanceRow()),
+                Expanded(child: Container()),
+              ],
             ),
           ),
         ),
@@ -53,11 +52,11 @@ class HeaderRow extends StatelessWidget {
               children: [
                 Container(
                   height: 40,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     backgroundBlendMode: BlendMode.color,
                     color: baseBlack,
                   ),
-                  padding: EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: Center(
                     child: Text(
                       '90 KPH',
@@ -73,10 +72,10 @@ class HeaderRow extends StatelessWidget {
           ),
           Container(
             child: Container(
-              child: Text(
+              child: const Text(
                 'LOGO',
                 style: TextStyle(
-                  color: Colors.red[460],
+                  color: Colors.amber,
                 ),
               ),
             ),
@@ -94,12 +93,12 @@ class DistanceRow extends StatelessWidget {
     double height = MediaQuery.of(context).size.height;
     developer.log('tipecifi width: $width, height: $height');
     return Container(
-      padding: EdgeInsets.fromLTRB(40, 40, 40, 10),
+      padding: const EdgeInsets.fromLTRB(40, 40, 40, 10),
       child: Stack(
         children: [
           CustomPaint(
-            size: Size(height, width), // rotate
-            painter: Boundary(),
+            size: Size(width, height),
+            painter: ReferenceLine(),
           ),
           Align(
             alignment: Alignment.bottomCenter,
@@ -152,7 +151,7 @@ class _DistanceFieldState extends State<DistanceField> {
           isCollapsed: true,
         ),
         textAlign: TextAlign.center,
-        controller: controller,
+        controller: disTextController,
         maxLines: 1,
       ),
     );
@@ -165,7 +164,7 @@ class _DistanceFieldState extends State<DistanceField> {
   }
 }
 
-class Boundary extends CustomPainter {
+class ReferenceLine extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     developer.log('gupawism paint');
@@ -194,5 +193,21 @@ class Boundary extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(Boundary old) => false;
+  bool shouldRepaint(ReferenceLine old) => false;
+}
+
+class ObjectCounter extends InheritedWidget {
+  const ObjectCounter({
+    Key key,
+    @required this.count,
+  }) : assert(count != null);
+
+  final int count;
+
+  static ObjectCounter of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ObjectCounter>();
+  }
+
+  @override
+  bool updateShouldNotify(ObjectCounter old) => count != old.count;
 }

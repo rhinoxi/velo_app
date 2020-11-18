@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:velo_app/ui_layer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:tflite/tflite.dart';
 
 import 'dart:developer' as developer;
 
-typedef void Callback(List<dynamic> list, int h, int w);
+import 'bondbox.dart';
 
-class CameraLayer extends StatefulWidget {
+class CameraMain extends StatefulWidget {
   final List<CameraDescription> cameras;
-  final Callback setRecognitions;
-  CameraLayer(this.cameras, this.setRecognitions);
+  CameraMain(this.cameras);
 
   @override
-  _CameraLayerState createState() => _CameraLayerState();
+  _CameraMainState createState() => _CameraMainState();
 }
 
-class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
+class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
+  final GlobalKey<BndBoxState> _key = GlobalKey();
   CameraController controller;
   bool isDetecting = false;
 
@@ -62,14 +63,6 @@ class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
       enableAudio: false,
     );
 
-    // // If the controller is updated then update the UI.
-    // controller.addListener(() {
-    //   if (mounted) setState(() {});
-    //   if (controller.value.hasError) {
-    //     developer.log('lozsowac:' + controller.value.errorDescription);
-    //   }
-    // });
-
     controller.initialize().then((_) {
       if (!mounted) return;
       setState(() {});
@@ -85,7 +78,6 @@ class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
     }
     isDetecting = true;
     int startTime = new DateTime.now().millisecondsSinceEpoch;
-    developer.log('image height: ${img.height}, width: ${img.width}');
     Tflite.detectObjectOnFrame(
       bytesList: img.planes.map((plane) {
         return plane.bytes;
@@ -101,8 +93,14 @@ class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
       int endTime = DateTime.now().millisecondsSinceEpoch;
       print("Detection took ${endTime - startTime}");
       developer.log(recognitions.toString());
-
-      widget.setRecognitions(recognitions, img.height, img.width);
+      developer.log('image height: ${img.height}, width: ${img.width}');
+      final screen = MediaQuery.of(context).size;
+      developer.log('screen height: ${screen.height}, width: ${screen.width}');
+      _key.currentState.updateBoxes(
+        recognitions,
+        img.height,
+        img.width,
+      );
 
       isDetecting = false;
     });
@@ -110,34 +108,37 @@ class _CameraLayerState extends State<CameraLayer> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    developer.log('nCYeANtg rebuild camera');
     if (controller == null || !controller.value.isInitialized) {
       return Container();
     }
-    final size = MediaQuery.of(context).size;
-    final deviceRatio = size.width / size.height;
+    final screen = MediaQuery.of(context).size;
+    final deviceRatio = screen.height / screen.width;
     // landscape
-    final xScale = 1.0;
-    final yScale = controller.value.aspectRatio / deviceRatio;
-    return AspectRatio(
-      aspectRatio: deviceRatio,
-      child: Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.diagonal3Values(xScale, yScale, 1),
-        child: CameraPreview(controller),
-      ),
+    final xScale = controller.value.aspectRatio / deviceRatio;
+    final yScale = 1.0;
+    developer.log(
+        'controller ratio: ${controller.value.aspectRatio}, deviceRatio: $deviceRatio ');
+    return Stack(
+      children: [
+        RotatedBox(
+          quarterTurns: -1,
+          child: AspectRatio(
+            aspectRatio: deviceRatio,
+            child: Transform(
+              child: CameraPreview(controller),
+              alignment: Alignment.center,
+              transform: Matrix4.diagonal3Values(xScale, yScale, 1),
+            ),
+          ),
+        ),
+        BndBox(
+          key: _key,
+          screenH: screen.height,
+          screenW: screen.width,
+        ),
+        UILayer(),
+      ],
     );
-    // final xScale = 1.0;
-    // final yScale = controller.value.aspectRatio / deviceRatio;
-    // return AspectRatio(
-    //   aspectRatio: deviceRatio,
-    //   child: Transform(
-    //     alignment: Alignment.center,
-    //     transform: Matrix4.diagonal3Values(xScale, yScale, 1),
-    //     child: CameraPreview(controller),
-    //   ),
-    // );
   }
-
-  void logError(String code, String message) =>
-      developer.log('Error: $code\nError Message: $message');
 }
