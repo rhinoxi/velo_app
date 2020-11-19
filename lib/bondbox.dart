@@ -4,40 +4,47 @@ import 'dart:math' as math;
 import 'dart:developer' as developer;
 
 class BndBox extends StatefulWidget {
+  final List<dynamic> results;
+  final int previewH;
+  final int previewW;
   final double screenH;
   final double screenW;
 
-  BndBox({Key key, this.screenH, this.screenW}) : super(key: key);
+  BndBox(
+      {Key key,
+      this.results,
+      this.previewH,
+      this.previewW,
+      this.screenH,
+      this.screenW})
+      : super(key: key);
 
   @override
   BndBoxState createState() => BndBoxState();
 }
 
 class BndBoxState extends State<BndBox> {
-  List<dynamic> _results;
-  int _previewH;
-  int _previewW;
-  void updateBoxes(List<dynamic> recognitions, int previewH, int previewW) {
-    setState(() {
-      _results = recognitions;
-      _previewH = previewH;
-      _previewW = previewW;
-    });
-  }
+  // void updateBoxes(List<dynamic> recognitions, int previewH, int previewW) {
+  //   setState(() {
+  //     _results = recognitions;
+  //     _previewH = previewH;
+  //     _previewW = previewW;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
-    developer.log('DBEzVSJm rebuild bndbox');
     List<Widget> _renderBoxes() {
-      return _results?.map((re) {
+      return widget.results?.map((re) {
             var _x = re["rect"]["y"];
             var _w = re["rect"]["h"];
             var _h = re["rect"]["w"];
             var _y = 1 - re["rect"]["x"] - _h;
             var scaleW, scaleH, x, y, w, h;
 
-            if (widget.screenH / widget.screenW > _previewH / _previewW) {
-              scaleW = widget.screenH / _previewH * _previewW;
+            if (widget.screenH / widget.screenW >
+                widget.previewH / widget.previewW) {
+              scaleW = widget.screenH / widget.previewH * widget.previewW;
               scaleH = widget.screenH;
               var difW = (scaleW - widget.screenW) / scaleW;
               x = (_x - difW / 2) * scaleW;
@@ -46,7 +53,7 @@ class BndBoxState extends State<BndBox> {
               y = _y * scaleH;
               h = _h * scaleH;
             } else {
-              scaleH = widget.screenW / _previewW * _previewH;
+              scaleH = widget.screenW / widget.previewW * widget.previewH;
               scaleW = widget.screenW;
               var difH = (scaleH - widget.screenH) / scaleH;
               x = _x * scaleW;
@@ -55,10 +62,6 @@ class BndBoxState extends State<BndBox> {
               h = _h * scaleH;
               if (_y < difH / 2) h -= (difH / 2 - _y) * scaleH;
             }
-            double left = math.max(0, x);
-            double top = math.max(0, y);
-            developer
-                .log('UMxyQZTF left: $left, top: $top, width: $w, height: $h}');
 
             return Positioned(
               left: math.max(0, x),

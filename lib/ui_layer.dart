@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import 'dart:developer' as developer;
 
+import 'package:provider/provider.dart';
+import 'package:velo_app/recognition_model.dart';
+
 const distanceButtomHeight = 36.0;
 const baseBlack = Colors.black87;
 const baseYellow = Color(0xFFFBC02D);
@@ -13,7 +16,6 @@ final TextEditingController disTextController =
 class UILayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    developer.log('XplEqJCU UILayer rebuild');
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GestureDetector(
@@ -51,18 +53,22 @@ class HeaderRow extends StatelessWidget {
             child: Column(
               children: [
                 Container(
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    backgroundBlendMode: BlendMode.color,
-                    color: baseBlack,
-                  ),
+                  width: 100,
+                  height: 50,
+                  color: baseBlack,
+                  // decoration: const BoxDecoration(
+                  //   backgroundBlendMode: BlendMode.color,
+                  //   color: baseBlack,
+                  // ),
                   padding: const EdgeInsets.all(10.0),
                   child: Center(
-                    child: Text(
-                      '90 KPH',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: baseYellow,
+                    child: Consumer<Recognitions>(
+                      builder: (context, recognitions, child) => Text(
+                        '${recognitions.results?.length ?? 0} 个',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: baseYellow,
+                        ),
                       ),
                     ),
                   ),
@@ -91,7 +97,6 @@ class DistanceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    developer.log('tipecifi width: $width, height: $height');
     return Container(
       padding: const EdgeInsets.fromLTRB(40, 40, 40, 10),
       child: Stack(
@@ -167,7 +172,6 @@ class _DistanceFieldState extends State<DistanceField> {
 class ReferenceLine extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    developer.log('gupawism paint');
     final thickLine = Paint()
       ..color = baseBlack
       ..strokeWidth = 2;

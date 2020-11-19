@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:provider/provider.dart';
+import 'package:velo_app/recognition_model.dart';
 import 'package:velo_app/ui_layer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:tflite/tflite.dart';
@@ -17,7 +19,7 @@ class CameraMain extends StatefulWidget {
 }
 
 class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
-  final GlobalKey<BndBoxState> _key = GlobalKey();
+  // final GlobalKey<BndBoxState> _key = GlobalKey();
   CameraController controller;
   bool isDetecting = false;
 
@@ -62,6 +64,16 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       ResolutionPreset.high,
       enableAudio: false,
     );
+    controller.addListener(() {
+      developer.log('fObIZmtH controller listenner running');
+      if (mounted) {
+        setState(() {});
+      }
+
+      if (controller.value.hasError) {
+        print('Camera error ${controller.value.errorDescription}');
+      }
+    });
 
     controller.initialize().then((_) {
       if (!mounted) return;
@@ -92,23 +104,15 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     ).then((recognitions) {
       int endTime = DateTime.now().millisecondsSinceEpoch;
       print("Detection took ${endTime - startTime}");
-      developer.log(recognitions.toString());
-      developer.log('image height: ${img.height}, width: ${img.width}');
       final screen = MediaQuery.of(context).size;
-      developer.log('screen height: ${screen.height}, width: ${screen.width}');
-      _key.currentState.updateBoxes(
-        recognitions,
-        img.height,
-        img.width,
-      );
-
+      Provider.of<Recognitions>(context, listen: false)
+          .update(recognitions, img.height, img.width);
       isDetecting = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    developer.log('nCYeANtg rebuild camera');
     if (controller == null || !controller.value.isInitialized) {
       return Container();
     }
@@ -117,8 +121,6 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     // landscape
     final xScale = controller.value.aspectRatio / deviceRatio;
     final yScale = 1.0;
-    developer.log(
-        'controller ratio: ${controller.value.aspectRatio}, deviceRatio: $deviceRatio ');
     return Stack(
       children: [
         RotatedBox(
@@ -132,10 +134,15 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
             ),
           ),
         ),
-        BndBox(
-          key: _key,
-          screenH: screen.height,
-          screenW: screen.width,
+        Consumer<Recognitions>(
+          builder: (context, recognitions, child) => BndBox(
+            // key: _key,
+            results: recognitions.results,
+            previewH: recognitions.previewH,
+            previewW: recognitions.previewW,
+            screenH: screen.height,
+            screenW: screen.width,
+          ),
         ),
         UILayer(),
       ],
