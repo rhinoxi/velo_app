@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
-import 'package:velo_app/recognition_model.dart';
 import 'package:velo_app/ui_layer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:tflite/tflite.dart';
@@ -9,6 +8,7 @@ import 'package:tflite/tflite.dart';
 import 'dart:developer' as developer;
 
 import 'bondbox.dart';
+import 'model.dart';
 
 class CameraMain extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -79,7 +79,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {});
       controller.startImageStream((CameraImage img) {
-        processImage(img);
+        // processImage(img);
       });
     });
   }
@@ -88,6 +88,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     if (isDetecting) {
       return;
     }
+    developer.log(DateTime.now().toString());
     isDetecting = true;
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     Tflite.detectObjectOnFrame(
@@ -104,7 +105,6 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     ).then((recognitions) {
       int endTime = DateTime.now().millisecondsSinceEpoch;
       print("Detection took ${endTime - startTime}");
-      final screen = MediaQuery.of(context).size;
       Provider.of<Recognitions>(context, listen: false)
           .update(recognitions, img.height, img.width);
       isDetecting = false;
@@ -137,7 +137,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
         Consumer<Recognitions>(
           builder: (context, recognitions, child) => BndBox(
             // key: _key,
-            results: recognitions.results,
+            results: recognitions.values,
             previewH: recognitions.previewH,
             previewW: recognitions.previewW,
             screenH: screen.height,

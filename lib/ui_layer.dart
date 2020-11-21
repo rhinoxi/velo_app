@@ -1,14 +1,16 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'dart:developer' as developer;
 
-import 'package:provider/provider.dart';
-import 'package:velo_app/recognition_model.dart';
+import 'model.dart';
 
 const distanceButtomHeight = 36.0;
-const baseBlack = Colors.black87;
-const baseYellow = Color(0xFFFBC02D);
+const baseBlack = Color(0xFF2B3140);
+const baseWhite = Color(0xFFE6EBF9);
 
 final TextEditingController disTextController =
     TextEditingController(text: '18.44');
@@ -30,7 +32,7 @@ class UILayer extends StatelessWidget {
               children: [
                 Expanded(child: HeaderRow()),
                 Expanded(flex: 3, child: DistanceRow()),
-                Expanded(child: Container()),
+                Expanded(child: DebugRow()),
               ],
             ),
           ),
@@ -40,9 +42,76 @@ class UILayer extends StatelessWidget {
   }
 }
 
+class DebugRow extends StatelessWidget {
+  final Random rand = Random();
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        RaisedButton(
+          child: Text('添加记录'),
+          onPressed: () {
+            context.read<Records>().add(
+                Record(speed: rand.nextDouble(), createdAt: DateTime.now()));
+          },
+        ),
+      ],
+    );
+  }
+}
+
+Widget makeUnifiedDialog(double height, double width, Widget child) {
+  return Dialog(
+    shape: ContinuousRectangleBorder(
+      borderRadius: BorderRadius.circular(0),
+    ),
+    backgroundColor: Colors.white,
+    child: Container(
+      height: height,
+      width: width,
+      child: child,
+    ),
+  );
+}
+
 class HeaderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    var screen = MediaQuery.of(context).size;
+    var recordDialog = makeUnifiedDialog(
+      screen.height,
+      screen.width,
+      Column(
+        children: [
+          Expanded(
+            child: Scrollbar(
+              child: Consumer<Records>(
+                builder: (context, records, child) => ListView.builder(
+                  padding: EdgeInsets.all(5),
+                  shrinkWrap: true,
+                  itemCount: records.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return ListTile(
+                      title: Text(records[index].speed.toString()),
+                      subtitle: Text(
+                        records[index].createdAt.toIso8601String(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    var settingDialog = makeUnifiedDialog(
+        screen.height,
+        screen.width,
+        Column(
+          children: [],
+        ));
     return Padding(
       padding: EdgeInsets.all(10),
       child: Row(
@@ -56,18 +125,15 @@ class HeaderRow extends StatelessWidget {
                   width: 100,
                   height: 50,
                   color: baseBlack,
-                  // decoration: const BoxDecoration(
-                  //   backgroundBlendMode: BlendMode.color,
-                  //   color: baseBlack,
-                  // ),
                   padding: const EdgeInsets.all(10.0),
                   child: Center(
                     child: Consumer<Recognitions>(
                       builder: (context, recognitions, child) => Text(
-                        '${recognitions.results?.length ?? 0} 个',
+                        '${recognitions.values?.length ?? 0} 个',
                         style: TextStyle(
                           fontSize: 16,
-                          color: baseYellow,
+                          fontWeight: FontWeight.bold,
+                          color: baseWhite,
                         ),
                       ),
                     ),
@@ -77,13 +143,27 @@ class HeaderRow extends StatelessWidget {
             ),
           ),
           Container(
-            child: Container(
-              child: const Text(
-                'LOGO',
-                style: TextStyle(
-                  color: Colors.amber,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.assignment),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => recordDialog,
+                    );
+                  },
                 ),
-              ),
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => settingDialog,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -112,7 +192,7 @@ class DistanceRow extends StatelessWidget {
               width: 100,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: baseYellow,
+                  color: baseWhite,
                 ),
                 child: DistanceField(),
               ),

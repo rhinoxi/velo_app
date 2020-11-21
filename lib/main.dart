@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
 import 'package:tflite/tflite.dart';
-import 'package:velo_app/recognition_model.dart';
 
 import 'dart:developer' as developer;
 
+import 'model.dart';
 import 'camera_main.dart';
 
 List<CameraDescription> cameras;
@@ -30,8 +30,7 @@ Future<void> main() async {
 loadModel() async {
   Tflite.close();
   try {
-    String res;
-    res = await Tflite.loadModel(
+    await Tflite.loadModel(
       model: "assets/yolov2_tiny.tflite",
       labels: "assets/yolov2_tiny.txt",
       // useGpuDelegate: true,
@@ -50,6 +49,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (context) => Recognitions(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => Records(),
         ),
       ],
       child: MaterialApp(
