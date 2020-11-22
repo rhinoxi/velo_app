@@ -37,4 +37,22 @@ class Records with ChangeNotifier {
   Record operator [](int i) => records[i];
 
   int get length => records.length;
+
+  void sortByDate({reverse: false}) {
+    if (reverse) {
+      records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else {
+      records.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    }
+    notifyListeners();
+  }
+
+  void sortBySpeed({reverse: false}) {
+    if (reverse) {
+      records.sort((a, b) => b.speed.compareTo(a.speed));
+    } else {
+      records.sort((a, b) => a.speed.compareTo(b.speed));
+    }
+    notifyListeners();
+  }
 }

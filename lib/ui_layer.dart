@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 import 'dart:developer' as developer;
 
@@ -68,6 +69,7 @@ Widget makeUnifiedDialog(double height, double width, Widget child) {
     ),
     backgroundColor: Colors.white,
     child: Container(
+      color: baseWhite,
       height: height,
       width: width,
       child: child,
@@ -75,31 +77,105 @@ Widget makeUnifiedDialog(double height, double width, Widget child) {
   );
 }
 
+class SortByButton extends StatefulWidget {
+  @override
+  _SortByButtonState createState() => _SortByButtonState();
+}
+
+class _SortByButtonState extends State<SortByButton> {
+  String value = 'Date';
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      value: value,
+      onChanged: (String newValue) {
+        if (newValue == 'Date') {
+          context.read<Records>().sortByDate();
+        } else if (newValue == 'Speed') {
+          context.read<Records>().sortBySpeed();
+        }
+        setState(() {
+          value = newValue;
+        });
+      },
+      items: <String>['Date', 'Speed']
+          .map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+    );
+  }
+}
+
 class HeaderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     var recordDialog = makeUnifiedDialog(
-      screen.height,
-      screen.width,
+      screen.height * 0.6,
+      screen.width * 0.6,
       Column(
         children: [
+          Row(
+            children: [
+              Text(
+                'Sort by:',
+                style: TextStyle(color: baseWhite),
+              ),
+              SortByButton(),
+            ],
+          ),
           Expanded(
-            child: Scrollbar(
-              child: Consumer<Records>(
-                builder: (context, records, child) => ListView.builder(
-                  padding: EdgeInsets.all(5),
-                  shrinkWrap: true,
-                  itemCount: records.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return ListTile(
-                      title: Text(records[index].speed.toString()),
-                      subtitle: Text(
-                        records[index].createdAt.toIso8601String(),
+            child: Consumer<Records>(
+              builder: (context, records, child) => ListView.builder(
+                scrollDirection: Axis.vertical,
+                padding: EdgeInsets.all(20),
+                shrinkWrap: true,
+                itemCount: records.length,
+                itemBuilder: (BuildContext context, int index) {
+                  var r = records[index];
+                  return Card(
+                    elevation: 8.0,
+                    margin: new EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 6.0),
+                    child: Container(
+                      decoration:
+                          BoxDecoration(color: Color.fromRGBO(64, 75, 96, .9)),
+                      child: ListTile(
+                        leading: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: 20,
+                              padding: EdgeInsets.only(right: 20, left: 10),
+                              decoration: new BoxDecoration(
+                                  border: new Border(
+                                      right: new BorderSide(
+                                          width: 1.0, color: Colors.white24))),
+                              child: Text(index.toString(),
+                                  style: TextStyle(color: baseWhite)),
+                            ),
+                          ],
+                        ),
+                        title: Text(
+                          r.speed.toStringAsFixed(
+                              r.speed.truncateToDouble() == r.speed ? 0 : 2),
+                          style: TextStyle(
+                              color: baseWhite, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          DateFormat('yyyy-MM-dd H:m:s').format(r.createdAt),
+                          style: TextStyle(color: baseWhite),
+                        ),
+                        trailing: Container(
+                          child: Icon(Icons.delete, color: baseWhite),
+                        ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

@@ -28,6 +28,7 @@ dependencies:
   cupertino_icons: ^1.0.0
   camera: 0.5.8+11
   wakelock: 0.2.1+1
+  intl: ^0.16.0
   tflite: 
     path: ./tflite-1.1.1-local
 
