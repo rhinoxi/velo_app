@@ -51,10 +51,13 @@ class DebugRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         RaisedButton(
-          child: Text('添加记录'),
+          child: Text('+测试数据'),
           onPressed: () {
-            context.read<Records>().add(
-                Record(speed: rand.nextDouble(), createdAt: DateTime.now()));
+            var speed = rand.nextDouble() * 100;
+            context.read<CurrentSpeed>().update(speed);
+            context
+                .read<Records>()
+                .add(Record(speed: speed, createdAt: DateTime.now()));
           },
         ),
       ],
@@ -62,7 +65,8 @@ class DebugRow extends StatelessWidget {
   }
 }
 
-Widget makeUnifiedDialog(double height, double width, Widget child) {
+Widget makeUnifiedDialog(
+    BuildContext context, double height, double width, Widget child) {
   return Dialog(
     shape: ContinuousRectangleBorder(
       borderRadius: BorderRadius.circular(0),
@@ -72,7 +76,26 @@ Widget makeUnifiedDialog(double height, double width, Widget child) {
       color: baseWhite,
       height: height,
       width: width,
-      child: child,
+      child: Stack(
+        overflow: Overflow.visible,
+        children: [
+          Positioned(
+            right: -12.0,
+            top: -12.0,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+              },
+              child: CircleAvatar(
+                radius: 14.0,
+                backgroundColor: baseBlack,
+                child: Icon(Icons.close, color: baseWhite),
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
     ),
   );
 }
@@ -114,68 +137,107 @@ class HeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
     var recordDialog = makeUnifiedDialog(
-      screen.height * 0.6,
-      screen.width * 0.6,
+      context,
+      screen.height * 0.75,
+      screen.width * 0.75,
       Column(
         children: [
-          Row(
-            children: [
-              Text(
-                'Sort by:',
-                style: TextStyle(color: baseWhite),
-              ),
-              SortByButton(),
-            ],
+          // Row(
+          //   children: [
+          //     Text(
+          //       'Sort by:',
+          //       style: TextStyle(color: baseWhite),
+          //     ),
+          //     SortByButton(),
+          //   ],
+          // ),
+          Container(
+            padding: EdgeInsets.only(top: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '我的记录',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
-            child: Consumer<Records>(
-              builder: (context, records, child) => ListView.builder(
-                scrollDirection: Axis.vertical,
-                padding: EdgeInsets.all(20),
-                shrinkWrap: true,
-                itemCount: records.length,
-                itemBuilder: (BuildContext context, int index) {
-                  var r = records[index];
-                  return Card(
-                    elevation: 8.0,
-                    margin: new EdgeInsets.symmetric(
-                        horizontal: 10.0, vertical: 6.0),
-                    child: Container(
-                      decoration:
-                          BoxDecoration(color: Color.fromRGBO(64, 75, 96, .9)),
-                      child: ListTile(
-                        leading: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              height: 20,
-                              padding: EdgeInsets.only(right: 20, left: 10),
-                              decoration: new BoxDecoration(
-                                  border: new Border(
-                                      right: new BorderSide(
-                                          width: 1.0, color: Colors.white24))),
-                              child: Text(index.toString(),
-                                  style: TextStyle(color: baseWhite)),
-                            ),
-                          ],
-                        ),
-                        title: Text(
-                          r.speed.toStringAsFixed(
-                              r.speed.truncateToDouble() == r.speed ? 0 : 2),
-                          style: TextStyle(
-                              color: baseWhite, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          DateFormat('yyyy-MM-dd H:m:s').format(r.createdAt),
-                          style: TextStyle(color: baseWhite),
-                        ),
-                        trailing: Container(
-                          child: Icon(Icons.delete, color: baseWhite),
+            child: Container(
+              padding: EdgeInsets.all(10),
+              child: Consumer<Records>(
+                builder: (context, records, child) => ListView.builder(
+                  scrollDirection: Axis.vertical,
+                  shrinkWrap: true,
+                  itemCount: records.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    var r = records[records.length - index - 1];
+                    var formattedDate =
+                        DateFormat('yyyy-MM-dd HH:mm:ss').format(r.createdAt);
+                    return Card(
+                      elevation: 8.0,
+                      margin: new EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 6.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            color: Color.fromRGBO(64, 75, 96, .9)),
+                        child: ListTile(
+                          // TODO: play
+                          onTap: () {},
+                          leading: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                height: 20,
+                                padding: EdgeInsets.only(left: 10),
+                                child: Icon(Icons.play_arrow),
+                              ),
+                            ],
+                          ),
+                          title: Text(
+                            r.speed.toStringAsFixed(
+                                r.speed.truncateToDouble() == r.speed ? 0 : 2),
+                            style: TextStyle(
+                                color: baseWhite, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            formattedDate,
+                            style: TextStyle(color: baseWhite),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  content: Text('确定删除 $formattedDate 的记录？'),
+                                  actions: [
+                                    TextButton(
+                                      child: Text('取消'),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                    ),
+                                    TextButton(
+                                        child: Text('确定'),
+                                        onPressed: () {
+                                          context.read<Records>().removeAt(
+                                              records.length - index - 1);
+                                          Navigator.of(context).pop();
+                                        }),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -183,8 +245,9 @@ class HeaderRow extends StatelessWidget {
       ),
     );
     var settingDialog = makeUnifiedDialog(
-        screen.height,
-        screen.width,
+        context,
+        screen.height * 0.75,
+        screen.width * 0.75,
         Column(
           children: [],
         ));
@@ -203,9 +266,9 @@ class HeaderRow extends StatelessWidget {
                   color: baseBlack,
                   padding: const EdgeInsets.all(10.0),
                   child: Center(
-                    child: Consumer<Recognitions>(
-                      builder: (context, recognitions, child) => Text(
-                        '${recognitions.values?.length ?? 0} 个',
+                    child: Consumer<CurrentSpeed>(
+                      builder: (context, speed, child) => Text(
+                        '${speed.value.toStringAsFixed(speed.value.truncateToDouble() == speed.value ? 0 : 2)} KPH',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -222,7 +285,10 @@ class HeaderRow extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.assignment),
+                  icon: Icon(
+                    Icons.assignment,
+                    color: baseWhite,
+                  ),
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -231,7 +297,10 @@ class HeaderRow extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.settings),
+                  icon: Icon(
+                    Icons.settings,
+                    color: baseWhite,
+                  ),
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -329,7 +398,7 @@ class ReferenceLine extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final thickLine = Paint()
-      ..color = baseBlack
+      ..color = baseWhite
       ..strokeWidth = 2;
 
     double leftBoundary = 0;
@@ -343,7 +412,7 @@ class ReferenceLine extends CustomPainter {
 
     double innerBottomBoundary = size.height - distanceButtomHeight / 2;
     final thinLine = Paint()
-      ..color = baseBlack
+      ..color = baseWhite
       ..strokeWidth = 1;
     canvas.drawLine(Offset(leftBoundary, innerBottomBoundary),
         Offset(size.width * 0.4, innerBottomBoundary), thinLine);

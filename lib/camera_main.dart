@@ -7,7 +7,7 @@ import 'package:tflite/tflite.dart';
 
 import 'dart:developer' as developer;
 
-import 'bondbox.dart';
+// import 'bondbox.dart';
 import 'model.dart';
 
 class CameraMain extends StatefulWidget {
@@ -79,12 +79,12 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {});
       controller.startImageStream((CameraImage img) {
-        // processImage(img);
+        // imageDetect(img);
       });
     });
   }
 
-  processImage(CameraImage img) {
+  imageDetect(CameraImage img) {
     if (isDetecting) {
       return;
     }
@@ -134,16 +134,17 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
             ),
           ),
         ),
-        Consumer<Recognitions>(
-          builder: (context, recognitions, child) => BndBox(
-            // key: _key,
-            results: recognitions.values,
-            previewH: recognitions.previewH,
-            previewW: recognitions.previewW,
-            screenH: screen.height,
-            screenW: screen.width,
-          ),
-        ),
+        // Image Detection
+        // Consumer<Recognitions>(
+        //   builder: (context, recognitions, child) => BndBox(
+        //     // key: _key,
+        //     results: recognitions.values,
+        //     previewH: recognitions.previewH,
+        //     previewW: recognitions.previewW,
+        //     screenH: screen.height,
+        //     screenW: screen.width,
+        //   ),
+        // ),
         UILayer(),
       ],
     );

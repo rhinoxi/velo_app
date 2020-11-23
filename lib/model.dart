@@ -14,6 +14,15 @@ class Recognitions with ChangeNotifier {
   }
 }
 
+class CurrentSpeed with ChangeNotifier {
+  double value = 0;
+
+  void update(double newValue) {
+    value = newValue;
+    notifyListeners();
+  }
+}
+
 class Record {
   DateTime createdAt;
   double speed;
@@ -23,9 +32,15 @@ class Record {
 
 class Records with ChangeNotifier {
   List<Record> records = [];
+  final int limit;
+
+  Records(this.limit);
 
   void add(Record r) {
     records.add(r);
+    if (records.length > limit) {
+      records.removeAt(0);
+    }
     notifyListeners();
   }
 

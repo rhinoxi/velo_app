@@ -47,11 +47,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // ChangeNotifierProvider(
+        //   create: (context) => Recognitions(),
+        // ),
         ChangeNotifierProvider(
-          create: (context) => Recognitions(),
+          create: (context) => CurrentSpeed(),
         ),
         ChangeNotifierProvider(
-          create: (context) => Records(),
+          create: (context) => Records(10),
         ),
       ],
       child: MaterialApp(
