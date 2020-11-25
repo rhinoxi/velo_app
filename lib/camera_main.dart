@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
-import 'package:velo_app/ui_layer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:tflite/tflite.dart';
 
 import 'dart:developer' as developer;
 
 // import 'bondbox.dart';
+import 'ui_layer.dart';
+import 'global.dart';
 import 'model.dart';
 
 class CameraMain extends StatefulWidget {
@@ -22,6 +23,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
   // final GlobalKey<BndBoxState> _key = GlobalKey();
   CameraController controller;
   bool isDetecting = false;
+  bool isFlying = false;
 
   @override
   void initState() {
@@ -79,6 +81,17 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {});
       controller.startImageStream((CameraImage img) {
+        imageBuffer.addLast(img);
+        if (imageBuffer.length > imageBufferSize) {
+          imageBuffer.removeFirst();
+        }
+        // TODO: detecting
+        // if !isFlying && foundBall
+        //   isFlying = true
+        // if isFlying && (notFoundBallCount >= 5 || notProcessCount >= 10)
+        //   isFlying = false
+        //   saveImageBuffer to another List, ImageList
+        // if saveVideo triggered, save ImageList to video
         // imageDetect(img);
       });
     });

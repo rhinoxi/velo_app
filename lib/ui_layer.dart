@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 
 import 'dart:developer' as developer;
 
+import 'global.dart';
+import 'video_storage.dart';
 import 'model.dart';
 
 const distanceButtomHeight = 36.0;
@@ -58,6 +60,7 @@ class DebugRow extends StatelessWidget {
             context
                 .read<Records>()
                 .add(Record(speed: speed, createdAt: DateTime.now()));
+            YuvStorage().writeCameraImages(imageBuffer.toList());
           },
         ),
       ],
