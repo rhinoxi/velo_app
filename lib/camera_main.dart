@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
-import 'package:tflite/tflite.dart';
 
 import 'dart:developer' as developer;
 
-// import 'bondbox.dart';
 import 'ui_layer.dart';
-import 'global.dart';
-import 'model.dart';
+import 'image_buffer.dart';
 
 class CameraMain extends StatefulWidget {
-  final List<CameraDescription> cameras;
-  CameraMain(this.cameras);
+  final CameraDescription camera;
+  CameraMain(this.camera);
 
   @override
   _CameraMainState createState() => _CameraMainState();
@@ -28,7 +24,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    onNewCameraSelected(widget.cameras[0]);
+    onNewCameraSelected(widget.camera);
     WidgetsBinding.instance.addObserver(this);
     Wakelock.enable();
   }
@@ -48,12 +44,12 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     if (controller == null || !controller.value.isInitialized) {
       return;
     }
-    if (state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       controller?.dispose();
+      imageBuffer.clear();
     } else if (state == AppLifecycleState.resumed) {
-      if (controller != null) {
-        onNewCameraSelected(controller.description);
-      }
+      onNewCameraSelected(controller.description);
     }
   }
 
@@ -63,28 +59,35 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     }
     controller = CameraController(
       cameraDescription,
-      ResolutionPreset.high,
+      ResolutionPreset.max,
       enableAudio: false,
     );
-    controller.addListener(() {
-      developer.log('fObIZmtH controller listenner running');
-      if (mounted) {
-        setState(() {});
-      }
+    // controller.addListener(() {
+    //   developer.log('fObIZmtH controller listenner running');
+    //   if (mounted) {
+    //     setState(() {});
+    //   }
 
-      if (controller.value.hasError) {
-        print('Camera error ${controller.value.errorDescription}');
-      }
-    });
+    //   if (controller.value.hasError) {
+    //     developer.log('Camera error ${controller.value.errorDescription}');
+    //   }
+    // });
 
-    controller.initialize().then((_) {
-      if (!mounted) return;
+    try {
+      await controller.initialize();
+    } on CameraException catch (e) {
+      developer.log('3af299 $e');
+    }
+
+    if (mounted) {
       setState(() {});
+      developer.log('2f3f36 mounted: $mounted');
+      developer.log('783a4f start image stream');
       controller.startImageStream((CameraImage img) {
-        imageBuffer.addLast(img);
-        if (imageBuffer.length > imageBufferSize) {
-          imageBuffer.removeFirst();
+        if (imageBuffer == null) {
+          imageBuffer = ImageBuffer(img.width, img.height);
         }
+        imageBuffer.add(img);
         // TODO: detecting
         // if !isFlying && foundBall
         //   isFlying = true
@@ -94,34 +97,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
         // if saveVideo triggered, save ImageList to video
         // imageDetect(img);
       });
-    });
-  }
-
-  imageDetect(CameraImage img) {
-    if (isDetecting) {
-      return;
     }
-    developer.log(DateTime.now().toString());
-    isDetecting = true;
-    int startTime = new DateTime.now().millisecondsSinceEpoch;
-    Tflite.detectObjectOnFrame(
-      bytesList: img.planes.map((plane) {
-        return plane.bytes;
-      }).toList(),
-      model: "YOLO",
-      imageHeight: img.height,
-      imageWidth: img.width,
-      imageMean: 0,
-      imageStd: 255.0,
-      numResultsPerClass: 1,
-      threshold: 0.2,
-    ).then((recognitions) {
-      int endTime = DateTime.now().millisecondsSinceEpoch;
-      print("Detection took ${endTime - startTime}");
-      Provider.of<Recognitions>(context, listen: false)
-          .update(recognitions, img.height, img.width);
-      isDetecting = false;
-    });
   }
 
   @override
@@ -147,17 +123,6 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
             ),
           ),
         ),
-        // Image Detection
-        // Consumer<Recognitions>(
-        //   builder: (context, recognitions, child) => BndBox(
-        //     // key: _key,
-        //     results: recognitions.values,
-        //     previewH: recognitions.previewH,
-        //     previewW: recognitions.previewW,
-        //     screenH: screen.height,
-        //     screenW: screen.width,
-        //   ),
-        // ),
         UILayer(),
       ],
     );

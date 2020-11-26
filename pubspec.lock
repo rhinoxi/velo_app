@@ -90,6 +90,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_ffmpeg:
+    dependency: "direct main"
+    description:
+      name: flutter_ffmpeg
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -266,13 +273,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.2.19-nullsafety.2"
-  tflite:
-    dependency: "direct main"
-    description:
-      path: "tflite-1.1.1-local"
-      relative: true
-    source: path
-    version: "1.1.1"
   typed_data:
     dependency: transitive
     description:

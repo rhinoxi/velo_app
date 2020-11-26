@@ -1,19 +1,5 @@
 import 'package:flutter/material.dart';
 
-class Recognitions with ChangeNotifier {
-  List<dynamic> values;
-  int previewH;
-  int previewW;
-
-  void update(List<dynamic> _values, int _previewH, int _previewW) {
-    values = _values;
-    previewH = _previewH;
-    previewW = _previewW;
-
-    notifyListeners();
-  }
-}
-
 class CurrentSpeed with ChangeNotifier {
   double value = 0;
 

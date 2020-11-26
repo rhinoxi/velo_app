@@ -23,14 +23,6 @@ class BndBox extends StatefulWidget {
 }
 
 class BndBoxState extends State<BndBox> {
-  // void updateBoxes(List<dynamic> recognitions, int previewH, int previewW) {
-  //   setState(() {
-  //     _results = recognitions;
-  //     _previewH = previewH;
-  //     _previewW = previewW;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     List<Widget> _renderBoxes() {

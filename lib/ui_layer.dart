@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'dart:developer' as developer;
 
-import 'global.dart';
+import 'image_buffer.dart';
 import 'video_storage.dart';
 import 'model.dart';
 
@@ -56,11 +56,11 @@ class DebugRow extends StatelessWidget {
           child: Text('+测试数据'),
           onPressed: () {
             var speed = rand.nextDouble() * 100;
+            var now = DateTime.now();
             context.read<CurrentSpeed>().update(speed);
-            context
-                .read<Records>()
-                .add(Record(speed: speed, createdAt: DateTime.now()));
-            YuvStorage().writeCameraImages(imageBuffer.toList());
+            context.read<Records>().add(Record(speed: speed, createdAt: now));
+            writeCameraImages(now.toIso8601String(), imageBuffer.width,
+                imageBuffer.height, imageBuffer.fps, imageBuffer.validBuffer());
           },
         ),
       ],
