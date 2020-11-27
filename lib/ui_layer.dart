@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:velo_app/video_player.dart';
 
 import 'dart:developer' as developer;
 
@@ -199,8 +200,14 @@ class HeaderRow extends StatelessWidget {
                         decoration: BoxDecoration(
                             color: Color.fromRGBO(64, 75, 96, .9)),
                         child: ListTile(
-                          // TODO: play
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoPage(r.videoPath),
+                              ),
+                            );
+                          },
                           leading: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -224,6 +231,8 @@ class HeaderRow extends StatelessWidget {
                           trailing: IconButton(
                             icon: Icon(Icons.delete),
                             onPressed: () {
+                              developer
+                                  .log('records: ${records.length}, $index');
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -436,20 +445,4 @@ class ReferenceLine extends CustomPainter {
 
   @override
   bool shouldRepaint(ReferenceLine old) => false;
-}
-
-class ObjectCounter extends InheritedWidget {
-  const ObjectCounter({
-    Key key,
-    @required this.count,
-  }) : assert(count != null);
-
-  final int count;
-
-  static ObjectCounter of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<ObjectCounter>();
-  }
-
-  @override
-  bool updateShouldNotify(ObjectCounter old) => count != old.count;
 }
