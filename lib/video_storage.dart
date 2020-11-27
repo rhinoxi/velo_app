@@ -7,10 +7,10 @@ import 'dart:developer' as developer;
 
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 
-void saveVideo(File iFile, String oFilename, int width, int height, int fps) {
+saveVideo(File iFile, String oFilename, int width, int height, int fps) async {
   final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
 
-  _flutterFFmpeg
+  await _flutterFFmpeg
       .execute(
           "-f rawvideo -vcodec rawvideo -s ${width}x$height -r $fps -pix_fmt yuv420p -i ${iFile.path} -c:v mpeg4 -q:v 5 $oFilename")
       .then((rc) {
@@ -41,9 +41,8 @@ Future<String> writeCameraImages(String filename, int width, int height,
     sink.add(uv);
   }
   sink.close();
-  sink.done.then((_) {
-    saveVideo(tf, vfname, width, height, fps);
-  });
+  await sink.done;
+  saveVideo(tf, vfname, width, height, fps);
   developer.log('b9cd59 save path: ${tf.path}');
   return vfname;
 }

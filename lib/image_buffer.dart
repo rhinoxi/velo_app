@@ -2,8 +2,6 @@ import 'dart:math';
 
 import 'package:camera/camera.dart';
 
-ImageBuffer imageBuffer;
-
 class ImageBuffer {
   List<CameraImage> buffer = [];
   final int width;

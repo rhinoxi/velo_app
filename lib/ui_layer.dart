@@ -7,9 +7,9 @@ import 'package:intl/intl.dart';
 
 import 'dart:developer' as developer;
 
-import 'image_buffer.dart';
+import 'global.dart' as global;
 import 'video_storage.dart';
-import 'model.dart';
+import 'notifier.dart';
 
 const distanceButtomHeight = 36.0;
 const baseBlack = Color(0xFF2B3140);
@@ -58,9 +58,19 @@ class DebugRow extends StatelessWidget {
             var speed = rand.nextDouble() * 100;
             var now = DateTime.now();
             context.read<CurrentSpeed>().update(speed);
-            context.read<Records>().add(Record(speed: speed, createdAt: now));
-            writeCameraImages(now.toIso8601String(), imageBuffer.width,
-                imageBuffer.height, imageBuffer.fps, imageBuffer.validBuffer());
+            writeCameraImages(
+                    now.toIso8601String(),
+                    global.imageBuffer.width,
+                    global.imageBuffer.height,
+                    global.imageBuffer.fps,
+                    global.imageBuffer.validBuffer())
+                .then((String videoPath) {
+              context.read<Records>().add(
+                  Record(speed: speed, createdAt: now, videoPath: videoPath));
+              // TODO: show save success
+            }, onError: (e) {
+              // TODO: show error
+            });
           },
         ),
       ],

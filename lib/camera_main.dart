@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 
 import 'ui_layer.dart';
 import 'image_buffer.dart';
+import 'global.dart' as global;
 
 class CameraMain extends StatefulWidget {
   final CameraDescription camera;
@@ -23,6 +24,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
 
   @override
   void initState() {
+    developer.log('9410f4 camera init');
     super.initState();
     onNewCameraSelected(widget.camera);
     WidgetsBinding.instance.addObserver(this);
@@ -31,6 +33,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    developer.log('9cb024 camera dispose');
     controller?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     Wakelock.disable();
@@ -46,14 +49,16 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     }
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
+      controller?.stopImageStream();
       controller?.dispose();
-      imageBuffer.clear();
+      global.imageBuffer?.clear();
     } else if (state == AppLifecycleState.resumed) {
       onNewCameraSelected(controller.description);
     }
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
+    developer.log('910a07 new camera selected');
     if (controller != null) {
       await controller.dispose();
     }
@@ -80,14 +85,12 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     }
 
     if (mounted) {
-      setState(() {});
       developer.log('2f3f36 mounted: $mounted');
-      developer.log('783a4f start image stream');
       controller.startImageStream((CameraImage img) {
-        if (imageBuffer == null) {
-          imageBuffer = ImageBuffer(img.width, img.height);
+        if (global.imageBuffer == null) {
+          global.imageBuffer = ImageBuffer(img.width, img.height);
         }
-        imageBuffer.add(img);
+        global.imageBuffer.add(img);
         // TODO: detecting
         // if !isFlying && foundBall
         //   isFlying = true
@@ -97,6 +100,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
         // if saveVideo triggered, save ImageList to video
         // imageDetect(img);
       });
+      setState(() {});
     }
   }
 
