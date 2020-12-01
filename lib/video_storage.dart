@@ -55,8 +55,8 @@ Uint8List convertUVPlane(CameraImage img) {
   final int l = width * height ~/ 4;
   Uint8List ret = Uint8List(l * 2);
   int count = 0;
-  for (int x = 0; x < width; x += 2) {
-    for (int y = 0; y < height; y += 2) {
+  for (int y = 0; y < height; y += 2) {
+    for (int x = 0; x < width; x += 2) {
       final int uvIndex =
           uvPixelStride * (x / 2).floor() + uvRowStride * (y / 2).floor();
       ret[count] = img.planes[1].bytes[uvIndex];
