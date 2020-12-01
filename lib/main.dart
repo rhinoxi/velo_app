@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
@@ -8,8 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:developer' as developer;
 
-import 'notifier.dart';
-import 'camera_main.dart';
+import 'models/record.dart';
+import 'models/custom_settings.dart';
+import 'screens/camera_main.dart';
 import 'global.dart' as global;
 
 List<CameraDescription> cameras;
@@ -37,18 +36,13 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
+          create: (context) => CustomSettings.load(),
+        ),
+        ChangeNotifierProvider(
           create: (context) => CurrentSpeed(),
         ),
         ChangeNotifierProvider(
-          create: (context) {
-            String recordListStr = global.prefs.getString(global.recordListKey);
-            List<Record> records = [];
-            if (recordListStr != null) {
-              List tmp = json.decode(recordListStr);
-              records = tmp.map((record) => Record.fromJson(record)).toList();
-            }
-            return Records(10, records: records);
-          },
+          create: (context) => Records.load(),
         ),
       ],
       child: MaterialApp(
