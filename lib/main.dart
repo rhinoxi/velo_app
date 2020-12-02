@@ -47,12 +47,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'velo demo',
-        theme: ThemeData(
-          pageTransitionsTheme: PageTransitionsTheme(builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          }),
-        ),
+        theme: ThemeData.dark(),
         // TODO: 不确定 0 是不是都是后置主摄像头
         home: CameraMain(cameras[0]),
       ),
