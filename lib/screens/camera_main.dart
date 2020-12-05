@@ -47,8 +47,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
     if (controller == null || !controller.value.isInitialized) {
       return;
     }
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive) {
       controller?.dispose();
       global.imageBuffer?.clear();
     } else if (state == AppLifecycleState.resumed) {
@@ -85,7 +84,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
 
     if (mounted) {
       developer.log('2f3f36 mounted: $mounted');
-      controller.startImageStream((CameraImage img) {
+      await controller.startImageStream((CameraImage img) {
         if (global.imageBuffer == null) {
           global.imageBuffer = ImageBuffer(img.width, img.height);
         }
