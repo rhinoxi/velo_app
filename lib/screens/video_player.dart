@@ -35,6 +35,7 @@ class _VideoPageState extends State<VideoPage> {
     _videoPlayerController = VideoPlayerController.file(File(widget.videoPath));
     // TODO: file not found error
     await _videoPlayerController.initialize();
+    _videoPlayerController.setLooping(true);
     _videoPlayerController.play();
     setState(() {});
   }

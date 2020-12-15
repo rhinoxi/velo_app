@@ -89,6 +89,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
           global.imageBuffer = ImageBuffer(img.width, img.height);
         }
         global.imageBuffer.add(img);
+        developer.log(img.ball.toString());
         // TODO: detecting
         // if !isFlying && foundBall
         //   isFlying = true

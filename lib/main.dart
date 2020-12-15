@@ -15,8 +15,8 @@ List<CameraDescription> cameras;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIOverlays([]);
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setEnabledSystemUIOverlays([]);
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
   ]);
   try {
