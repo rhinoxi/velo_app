@@ -26,13 +26,15 @@ dependencies:
 
   provider: ^4.3.2
   cupertino_icons: ^1.0.0
-  camera: ^0.5.8+11
   wakelock: 0.2.1+1
   intl: ^0.16.0
   path_provider: ^1.6.0
   flutter_ffmpeg: ^0.3.0
   shared_preferences: '>=0.5.12+4 <2.0.0'
   video_player: ^1.0.1
+
+  camera:
+    path: ./camera_cv/
 
 dev_dependencies:
   flutter_test:

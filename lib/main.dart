@@ -8,6 +8,7 @@ import 'dart:developer' as developer;
 
 import 'models/record.dart';
 import 'models/custom_settings.dart';
+import 'models/ball.dart';
 import 'screens/camera_main.dart';
 import 'global.dart' as global;
 
@@ -43,6 +44,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => Records.load(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => Ball(),
         ),
       ],
       child: MaterialApp(

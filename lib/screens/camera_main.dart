@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:provider/provider.dart';
 
 import 'dart:developer' as developer;
 
 import 'ui_layer.dart';
+import 'ball.dart';
+import '../models/custom_settings.dart';
 import '../models/image_buffer.dart';
+import '../models/record.dart';
+import '../models/ball.dart';
+import '../constants.dart' as constants;
 import '../global.dart' as global;
+import '../utils.dart';
 
 class CameraMain extends StatefulWidget {
   final CameraDescription camera;
@@ -84,12 +91,43 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
 
     if (mounted) {
       developer.log('2f3f36 mounted: $mounted');
+
+      final screen = MediaQuery.of(context).size;
+      developer.log("screen width: ${screen.width}, height: ${screen.height}");
       await controller.startImageStream((CameraImage img) {
         if (global.imageBuffer == null) {
+          developer.log("image width: ${img.width}, height: ${img.height}");
           global.imageBuffer = ImageBuffer(img.width, img.height);
         }
         global.imageBuffer.add(img);
-        developer.log(img.ball.toString());
+
+        BallLocation bl;
+        if (img.ball != null) {
+          context
+              .read<Ball>()
+              .update(img.ball[0] * screen.width, img.ball[1] * screen.height);
+          bl = BallLocation(_rel2absDistance(img.ball[0]), img.timeInMs);
+        }
+        double speed = global.track.add(bl);
+
+        if (speed != null) {
+          DateTime now = DateTime.now();
+          context.read<CurrentSpeed>().update(speed);
+          global.oneBuffer.update(
+            Record(speed: speed, createdAt: now),
+            YUVImages(
+              global.imageBuffer.validBuffer(),
+              global.imageBuffer.width,
+              global.imageBuffer.height,
+              global.imageBuffer.fps,
+              now,
+            ),
+          );
+
+          if (context.read<CustomSettings>().autoSave) {
+            saveVideoAndShowInfo(context);
+          }
+        }
         // TODO: detecting
         // if !isFlying && foundBall
         //   isFlying = true
@@ -101,6 +139,15 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       });
       setState(() {});
     }
+  }
+
+  // 把 x 方向的像素位置转换成中心为 0 一边为正一边为负的距离
+  double _rel2absDistance(double x) {
+    double totalDistance = double.parse(global.disTextController.text);
+    return (x - (1 - constants.distLenPct) / 2) /
+            constants.distLenPct *
+            totalDistance -
+        totalDistance / 2;
   }
 
   @override
@@ -127,6 +174,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
           ),
         ),
         UILayer(),
+        BallCircle(),
       ],
     );
   }

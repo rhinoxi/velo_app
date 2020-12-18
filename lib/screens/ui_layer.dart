@@ -4,19 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:velo_app/models/image_buffer.dart';
 
 import 'dart:developer' as developer;
 
 import 'video_player.dart';
+import '../utils.dart';
 import '../global.dart' as global;
+import '../constants.dart' as constants;
 import '../models/record.dart';
 import '../models/custom_settings.dart';
 
 const distanceButtomHeight = 36.0;
-
-final TextEditingController disTextController =
-    TextEditingController(text: '18.44');
 
 class UILayer extends StatelessWidget {
   @override
@@ -45,27 +43,6 @@ class UILayer extends StatelessWidget {
   }
 }
 
-void saveVideoAndShowInfo(BuildContext context) {
-  var r = global.oneBuffer.record;
-  global.oneBuffer.yuvImages.writeCameraImages().then((String videoPath) {
-    r.videoPath = videoPath;
-    context.read<Records>().add(r);
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 1),
-        content: Text('Saved successfully'),
-      ),
-    );
-  }, onError: (e) {
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.toString()),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  });
-}
-
 class BottomRow extends StatelessWidget {
   final Random rand = Random();
 
@@ -76,27 +53,28 @@ class BottomRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          RaisedButton(
-            child: Text('+测试数据'),
-            onPressed: () {
-              var speed = rand.nextDouble() * 100;
-              var now = DateTime.now();
-              context.read<CurrentSpeed>().update(speed);
-              global.oneBuffer.update(
-                Record(speed: speed, createdAt: now),
-                YUVImages(
-                  global.imageBuffer.validBuffer(),
-                  global.imageBuffer.width,
-                  global.imageBuffer.height,
-                  global.imageBuffer.fps,
-                  now,
-                ),
-              );
-              if (context.read<CustomSettings>().autoSave) {
-                saveVideoAndShowInfo(context);
-              }
-            },
-          ),
+          Container(),
+          // RaisedButton(
+          //   child: Text('+测试数据'),
+          //   onPressed: () {
+          //     var speed = rand.nextDouble() * 100;
+          //     var now = DateTime.now();
+          //     context.read<CurrentSpeed>().update(speed);
+          //     global.oneBuffer.update(
+          //       Record(speed: speed, createdAt: now),
+          //       YUVImages(
+          //         global.imageBuffer.validBuffer(),
+          //         global.imageBuffer.width,
+          //         global.imageBuffer.height,
+          //         global.imageBuffer.fps,
+          //         now,
+          //       ),
+          //     );
+          //     if (context.read<CustomSettings>().autoSave) {
+          //       saveVideoAndShowInfo(context);
+          //     }
+          //   },
+          // ),
           Container(
             child: Row(
               children: [
@@ -413,14 +391,18 @@ class HeaderRow extends StatelessWidget {
 class DistanceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
+    final screen = MediaQuery.of(context).size;
     return Container(
-      padding: const EdgeInsets.fromLTRB(40, 40, 40, 10),
+      padding: EdgeInsets.fromLTRB(
+        screen.width * (1 - constants.distLenPct) / 2,
+        40,
+        screen.width * (1 - constants.distLenPct) / 2,
+        10,
+      ),
       child: Stack(
         children: [
           CustomPaint(
-            size: Size(width, height),
+            size: Size(screen.width, screen.height),
             painter: ReferenceLine(Theme.of(context).accentColor),
           ),
           Align(
@@ -474,7 +456,7 @@ class _DistanceFieldState extends State<DistanceField> {
           isCollapsed: true,
         ),
         textAlign: TextAlign.center,
-        controller: disTextController,
+        controller: global.disTextController,
         maxLines: 1,
       ),
     );

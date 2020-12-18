@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io';
 
@@ -14,8 +13,8 @@ class ImageBuffer {
   final int height;
   int _validLen;
 
-  DateTime startTime;
-  DateTime endTime;
+  int startTime;
+  int endTime;
   bool updateEndTime = true;
 
   ImageBuffer(this.width, this.height, {int validLen = 300}) {
@@ -23,12 +22,11 @@ class ImageBuffer {
   }
 
   void add(CameraImage ci) {
-    DateTime now = DateTime.now();
     if (startTime == null) {
-      startTime = now;
+      startTime = ci.timeInMs;
     }
     if (updateEndTime) {
-      endTime = now;
+      endTime = ci.timeInMs;
     }
     if (buffer.length > _validLen * 1.5) {
       updateEndTime = false;
@@ -55,9 +53,9 @@ class ImageBuffer {
   }
 
   int get fps {
-    Duration deltaTime = endTime.difference(startTime);
+    int deltaTimeInMs = endTime - startTime;
     int frame = buffer.length > _validLen * 2 ? _validLen * 2 : buffer.length;
-    double _fps = frame / deltaTime.inMicroseconds * pow(10, 6);
+    double _fps = frame / deltaTimeInMs * 1000;
     if (_fps > 22 && _fps < 26) {
       return 24;
     } else if (_fps > 28 && _fps < 32) {
@@ -137,6 +135,7 @@ class YUVImages {
   Future<void> saveVideo(File iFile, String oFilename) async {
     final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
 
+    developer.log("8212f2 save video: $width * $height, fps: $fps");
     await _flutterFFmpeg.execute(
         "-f rawvideo -vcodec rawvideo -s ${width}x$height -r $fps -pix_fmt yuv420p -i ${iFile.path} -c:v mpeg4 -q:v 5 $oFilename");
 
