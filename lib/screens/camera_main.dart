@@ -26,8 +26,7 @@ class CameraMain extends StatefulWidget {
 class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
   // final GlobalKey<BndBoxState> _key = GlobalKey();
   CameraController controller;
-  bool isDetecting = false;
-  bool isFlying = false;
+  int cvFrameInterval = 2;
 
   @override
   void initState() {
@@ -71,6 +70,7 @@ class _CameraMainState extends State<CameraMain> with WidgetsBindingObserver {
       cameraDescription,
       ResolutionPreset.max,
       enableAudio: false,
+      cvFrameInterval: cvFrameInterval,
     );
     // controller.addListener(() {
     //   developer.log('fObIZmtH controller listenner running');

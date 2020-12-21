@@ -23,7 +23,7 @@ class Track {
   double direction = 0;
   int emptyCount = 0;
   final int maxEmptyCount = 10;
-  final int minFrameCount = 5; // 至少需要捕获 minFrameCount 帧才能计算速度
+  final int minFrameCount = 4; // 至少需要捕获 minFrameCount 帧才能计算速度
   final double maxSpeed = 160;
   final double minSpeed = 30;
 

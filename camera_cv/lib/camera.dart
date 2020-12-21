@@ -285,7 +285,10 @@ class CameraController extends ValueNotifier<CameraValue> {
     this.description,
     this.resolutionPreset, {
     this.enableAudio = true,
+    this.cvFrameInterval = 1,
   }) : super(const CameraValue.uninitialized());
+
+  final int cvFrameInterval;
 
   /// The properties of the camera device controlled by this controller.
   final CameraDescription description;
@@ -330,6 +333,7 @@ class CameraController extends ValueNotifier<CameraValue> {
           'cameraName': description.name,
           'resolutionPreset': serializeResolutionPreset(resolutionPreset),
           'enableAudio': enableAudio,
+          'cvFrameInterval': cvFrameInterval,
         },
       );
       _textureId = reply['textureId'];

@@ -342,7 +342,7 @@ class HeaderRow extends StatelessWidget {
                   child: Center(
                     child: Consumer<CurrentSpeed>(
                       builder: (context, speed, child) => Text(
-                        '${speed.value.toStringAsFixed(speed.value.truncateToDouble() == speed.value ? 0 : 2)} KPH',
+                        '${speed.value.toStringAsFixed(0)} KPH',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

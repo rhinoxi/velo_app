@@ -152,6 +152,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
     TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture =
         textureRegistry.createSurfaceTexture();
     DartMessenger dartMessenger = new DartMessenger(messenger, flutterSurfaceTexture.id());
+    int cvFrameInterval = call.argument("cvFrameInterval");
     camera =
         new Camera(
             activity,
@@ -159,7 +160,8 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
             dartMessenger,
             cameraName,
             resolutionPreset,
-            enableAudio);
+            enableAudio,
+            cvFrameInterval);
 
     camera.open(result);
   }

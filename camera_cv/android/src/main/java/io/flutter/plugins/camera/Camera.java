@@ -47,9 +47,16 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.MatOfDouble;
+import org.opencv.core.MatOfByte;
+import org.opencv.core.MatOfFloat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
+import org.opencv.video.Video;
+import org.opencv.calib3d.Calib3d;
 import org.opencv.imgproc.Imgproc;
 
 public class Camera {
@@ -75,8 +82,10 @@ public class Camera {
   private int currentOrientation = ORIENTATION_UNKNOWN;
 
   private final Mat t0;
+  private final Mat fixedT0;
   private final Mat t1;
   private final Mat t2;
+  private final Mat fixedT2;
   private final Mat deltaT01;
   private final Mat deltaT02;
   private final Mat deltaT12;
@@ -84,16 +93,25 @@ public class Camera {
   private final Mat thT02;
   private final Mat thT12;
   private final double threshFactor = 3;
-  private final double minArea = 150;
-  private final double maxArea = 500;
+  private final double minArea = 40;  // 连通区域最小面积
+  private final double maxArea = 400;  // 连通区域最大面积
+  private final double minWhRatio = 0.3; // 连通区域最小宽高比
+  private final double maxWhRatio = 3; // 连通区域最大宽高比
+  private final double maxEmptyRatio = 3; // 连通区域矩形面积 与 实际面积 最大比值
+  // goodFeaturesToTrack 参数
+  private final int maxCorners = 10;
+  private final double qualityLevel = 0.01;
+  private final double minDistance = 30;
+
+  private final int cvFrameInterval;
   private int frameCounter = 0;
-  private int cvFrameInterval = 1;
   private int zoneLeft;
   private int zoneRight;
   private int zoneWidth;
   private int zoneTop;
   private int zoneBottom;
   private int zoneHeight;
+  private int cvCount = 0;
 
   // Mirrors camera.dart
   public enum ResolutionPreset {
@@ -111,7 +129,8 @@ public class Camera {
       final DartMessenger dartMessenger,
       final String cameraName,
       final String resolutionPreset,
-      final boolean enableAudio)
+      final boolean enableAudio,
+      final int cvFrameInterval)
       throws CameraAccessException {
     if (activity == null) {
       throw new IllegalStateException("No activity available!");
@@ -121,6 +140,8 @@ public class Camera {
     this.flutterTexture = flutterTexture;
     this.dartMessenger = dartMessenger;
     this.cameraManager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+    this.cvFrameInterval = cvFrameInterval;
+    System.out.format("3343a1 cvFrameInterval: %d\n", cvFrameInterval);
     orientationEventListener =
         new OrientationEventListener(activity.getApplicationContext()) {
           @Override
@@ -162,8 +183,10 @@ public class Camera {
     zoneHeight = zoneBottom - zoneTop;
 
     t0 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
+    fixedT0 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
     t1 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
     t2 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
+    fixedT2 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
     deltaT01 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
     deltaT02 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
     deltaT12 = new Mat(zoneHeight, zoneWidth, CvType.CV_8UC1);
@@ -533,7 +556,7 @@ public class Camera {
           if (img == null) return;
 
           List<Map<String, Object>> planes = new ArrayList<>();
-          boolean yLayer = true;
+          boolean isYLayer = true;
           for (Image.Plane plane : img.getPlanes()) {
             ByteBuffer buffer = plane.getBuffer();
 
@@ -547,15 +570,25 @@ public class Camera {
 
             planes.add(planeBuffer);
 
-            //
-            if (doCV && yLayer) {
+            if (doCV && isYLayer) {
               byte[] subBytes = new byte[previewSize.getHeight() * zoneWidth];
               for (int i = zoneTop; i < zoneBottom; i++) {
                 System.arraycopy(bytes, i * plane.getRowStride() + zoneLeft, subBytes, (i-zoneTop)*zoneWidth, zoneWidth);
               }
-              yLayer = false;
+              isYLayer = false;
               t2.put(0, 0, subBytes);
               // System.out.format("62f208 %f\n", t2.get(200, 200)[0]);
+
+              cvCount++;
+              // 至少有前后共三帧数据时，才进行抖动校正
+              if (cvCount >= 3) {
+                
+                // long time0 = System.currentTimeMillis();
+                stabilize(t1, t0, fixedT0);
+                stabilize(t1, t2, fixedT2);
+                // long dt = System.currentTimeMillis() - time0;
+                // System.out.format("00b1a9 stabilize cost: %d (millisecond)\n", dt);
+              }
             }
           }
 
@@ -566,9 +599,10 @@ public class Camera {
           imageBuffer.put("planes", planes);
           imageBuffer.put("timeInMs", now);
 
+          // 检测球的位置
           if (doCV) {
-            Core.absdiff(t0, t2, deltaT02);
-            Core.absdiff(t1, t2, deltaT12);
+            Core.absdiff(fixedT0, fixedT2, deltaT02);
+            Core.absdiff(t1, fixedT2, deltaT12);
             
             MatOfDouble meanT01 = new MatOfDouble();
             MatOfDouble meanT02 = new MatOfDouble();
@@ -611,7 +645,15 @@ public class Camera {
             double[] ball = new double[2];
             for (int row=0; row<stats.rows(); row++) {
               double area = stats.get(row, Imgproc.CC_STAT_AREA)[0];
-              if (area > minArea && area < maxArea) {
+              double whRatio = stats.get(row, Imgproc.CC_STAT_WIDTH)[0] / stats.get(row, Imgproc.CC_STAT_HEIGHT)[0];
+              // 过滤掉面积较小或较大的连通区域
+              // 过滤掉连通区域所包的面积比实际面积大很多的区域（过滤一些斜的线条）
+              // 过滤横宽比特别夸张的连通区域
+              if (area > minArea &&
+                  area < maxArea &&
+                  stats.get(row, Imgproc.CC_STAT_WIDTH)[0] * stats.get(row, Imgproc.CC_STAT_HEIGHT)[0] / area < maxEmptyRatio &&
+                  whRatio > minWhRatio &&
+                  whRatio < maxWhRatio) {
                 // System.out.println(stats.get(row, Imgproc.CC_STAT_AREA)[0]);
                 rectCount++;
                 ball[0] = (centroids.get(row, 0)[0] + zoneLeft) / previewSize.getWidth();
@@ -637,6 +679,65 @@ public class Camera {
 
         },
         null);
+  }
+
+  private Mat calcTransformMatrix(Mat refImg, Mat origImg) {
+    Mat ret = new Mat();
+    MatOfPoint refCorners = new MatOfPoint();
+    // long time0 = System.currentTimeMillis();
+    Imgproc.goodFeaturesToTrack(refImg, refCorners, maxCorners, qualityLevel, minDistance);
+    // System.out.format("72e90a goodFeaturesToTrack cost: %d (millisecond)\n", System.currentTimeMillis() - time0);
+    MatOfPoint2f refCorners2f = new MatOfPoint2f(refCorners.toArray());
+    MatOfPoint2f origCornersMat = new MatOfPoint2f();
+
+    MatOfByte status = new MatOfByte();
+
+    // time0 = System.currentTimeMillis();
+    Video.calcOpticalFlowPyrLK(refImg, origImg, refCorners2f, origCornersMat, status, new MatOfFloat());
+    // System.out.format("a1888a calcOpticalFlowPyrLK cost: %d (millisecond)\n", System.currentTimeMillis() - time0);
+    Point[] refCornersArray = refCorners2f.toArray();
+    Point[] origCornersArray = origCornersMat.toArray();
+
+    ArrayList<Point> validRefCornersArrayList = new ArrayList<Point>();
+    ArrayList<Point> validOrigCornersArrayList = new ArrayList<Point>();
+    
+    for (int row=0; row<status.rows(); row++) {
+      if (status.get(row, 0)[0] == 0) {
+        continue;
+      }
+      validRefCornersArrayList.add(refCornersArray[row]);
+      validOrigCornersArrayList.add(origCornersArray[row]);
+    }
+    if (validRefCornersArrayList.size() == 0) {
+      return ret;
+    }
+    Point[] validRefCornersArray = new Point[validRefCornersArrayList.size()];
+    Point[] validOrigCornersArray = new Point[validOrigCornersArrayList.size()];
+    validRefCornersArrayList.toArray(validRefCornersArray);
+    validOrigCornersArrayList.toArray(validOrigCornersArray);
+    MatOfPoint2f validRefCornersMat = new MatOfPoint2f(validRefCornersArray);
+    MatOfPoint2f validOrigCornersMat = new MatOfPoint2f(validOrigCornersArray);
+
+    ret = Calib3d.estimateAffinePartial2D(validOrigCornersMat, validRefCornersMat);
+    return ret;
+  }
+
+  private void stabilize(Mat refImg, Mat origImg, Mat fixedImg) {
+    int rows = refImg.rows();
+    int cols = refImg.cols();
+    int subTop = rows / 3;
+    int subBottom = rows * 2 / 3;
+    int subLeft = cols / 3;
+    int subRight = cols * 2 / 3;
+    Mat subRefImg = refImg.submat(subTop, subBottom, subLeft, subRight);
+    Mat subOrigImg = origImg.submat(subTop, subBottom, subLeft, subRight);
+
+    Mat m = calcTransformMatrix(subRefImg, subOrigImg);
+    if (m.empty()) {
+      fixedImg = origImg;
+    } else {
+      Imgproc.warpAffine(origImg, fixedImg, m, origImg.size());
+    }
   }
 
   private void closeCaptureSession() {
